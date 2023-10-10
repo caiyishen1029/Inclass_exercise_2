@@ -1,0 +1,145 @@
+---
+title: "In_class_ex_2"
+author: "yishen tsai"
+date: "2023-10-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Coodbook Lookup
+
+```{r}
+library(tidyverse)
+```
+
+### 1.1 Indicators
+
+Education 15+(E), it indicates the average years of education in the total population aged 15 years and older
+
+Educational inequality, Gini(E), it indicates the Gini coefficient of educational inequality 
+
+### 1.2 Data's coverage
+
+```{r}
+d <- read_csv("_DataPublic_/vdem/1984_2022/vdem_1984_2022_external.csv")
+names(d)
+view(d)
+```
+
+```{r}
+d |> select(country_name,year) |> distinct()
+```
+
+### 1.3 Sources 
+
+-   Clio-Infra (2018), \'Clio-Infra Project (Database)\'.**URL:** <http://www.clio-infra.eu/>
+
+```{=html}
+<!-- -->
+```
+-   United States Census Bureau (n.d.), \'International Data Base\'. **URL:** <https://www.census.gov/programs-surveys/international-programs/about/idb.html>
+
+## 2. Subset by columns 
+
+### 2.1 New dataset
+
+```{r}
+d_edu <- d|> select(country_name, country_id,year,e_peaveduc,e_peedgini)
+```
+
+### 2.2 Rename 
+
+```{r}
+d_edu <- d_edu|> rename("Country"= "country_name", "ID"= "country_id", "Year"= "year","Educational_level"= "e_peaveduc", "Educational_inquality"= "e_peedgini")
+
+```
+
+## 3. Subset by rows
+
+### 3.1 The top five countries-years have the highest educational level among population
+
+```{r}
+d_edu |> slice_max(order_by = Educational_level, n=5)
+```
+
+All are United Kingdom from 2010 to 2019
+
+### 3.2 The top five countries-years suffers from the most severe inquality in education
+
+```{r}
+d_edu |> slice_max(order_by = `Educational_inquality`, n=5)
+```
+
+Burkina Faso from 1984 to 1988
+
+## 4. Summarize the data
+
+### 4.1 Check the data availiability
+
+#### Missing data in Educational level
+
+```{r}
+# Missing data of each country 
+d_edu |>
+  mutate(Edu_level_missing = as.numeric(is.na(Educational_level)), .after = Educational_level ) |>
+  group_by(Country) |>
+  summarise(N_Edu_level_missing = sum(Edu_level_missing))
+```
+
+```{r}
+# Missing data in each year 
+d_edu |> mutate(Edu_level_missing = as.numeric(is.na(Educational_level)), .after = Educational_level ) |>
+  group_by(Year) |>
+  summarise(N_Edu_level_missing = sum(Edu_level_missing))
+```
+
+#### Missing data in Educational inequality
+
+```{r}
+# Missing data of each country 
+d_edu |>
+  mutate(Edu_inequal_missing = as.numeric(is.na(Educational_inquality)), .after = Educational_inquality) |>
+  group_by(Country) |>
+  summarise(N_Edu_inequal_missing = sum(Edu_inequal_missing))
+```
+
+```{r}
+# Missing data of each year 
+d_edu |>
+  mutate(Edu_inequal_missing = as.numeric(is.na(Educational_inquality)), .after = Educational_inquality) |>
+  group_by(Year) |>
+  summarise(N_Edu_inequal_missing = sum(Edu_inequal_missing))
+```
+
+### 4.2 Indicators
+
+#### 4.2.1 Average level of education quality from 1984 to 2022
+
+```{r}
+ d_edu |> group_by(Country) |> summarise(Edu_level_aver= mean(Educational_level, na.rm= TRUE), Edu_inequal_aver= mean(Educational_inquality, na.rm= TRUE))
+```
+
+#### 4.2.2 Change of educational quality
+
+```{r}
+d_edu |>
+  filter(Year >= 1984 & Year <= 2022) |>
+  group_by(Country) |>
+  arrange(Year) |>
+  summarise(elc = (last(Educational_level) - first(Educational_level)) / first(Educational_level),
+            eqc = (last(Educational_inquality) - first(Educational_inquality)) / first(Educational_inquality)) |>
+  ungroup() |>
+  arrange(Country)
+
+```
+
+### 4.3 Explanation  
+
+The United Kingdom should be the one which performing the best in the past 40 years. Since UK's population has the highest average educated year. Although UK has a small increased in its educated year but due to many reasons like unemployment rate. UK is the countries with highest education level.
+
+While, Burkina Faso is the country with the worst education quality. Since the country has the highest inequality that over 96 and the educated year is always around0.3 year. This countries is the most worst one in these two indicator. Even it makes a second highest progress in advancing its educated year.
+
+!!
